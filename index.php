@@ -6,8 +6,11 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+session_start();
+
 // Require autoload file
 require_once('vendor/autoload.php');
+require_once('model/data-layer.php');
 
 // Instantiate F3 Base Class (:: = static method || -> = instance method)
 $f3 = Base::instance();
@@ -30,7 +33,52 @@ $f3->route('GET /breakfast', function() {
 $f3->route('GET /lunch', function() {
     // Instantiate a view
     $view = new Template();
-    echo $view->render("views/lunch.html");
+    echo $view->render('views/lunch.html');
+});
+
+// Define an order 1 route + page (328/diner/order1)
+$f3->route('GET|POST /order1', function($f3) {
+
+    // If the form has been posted
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        // Move data from POST array to SESSION array
+        $_SESSION['food'] = $_POST['food'];
+        $_SESSION['meal'] = $_POST['meal'];
+
+        // Redirect to summary page
+        $f3->reroute('order2');
+    }
+
+    // Add meals to f3 hive
+    $f3->set('meals', getMeals());
+
+    // Instantiate a view
+    $view = new Template();
+    echo $view->render('views/order1.html');
+});
+
+// Define an order 2 route + page (328/diner/order2)
+$f3->route('GET|POST /order2', function ($f3) {
+    // If the form has been posted
+    /*if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        // Move data from Post to SESSION array
+
+        // Redirect to summary page
+    }*/
+
+    // Add condiments to f3 hive
+    $f3->set('condiments', getCondiments());
+
+    // Instantiate a view
+    $view = new Template();
+    echo $view->render('views/order2.html');
+
+});
+
+// Define a summary route + page (328/diner/summary)
+$f3->route('GET /summary', function() {
+    $view = new Template();
+    echo $view->render('views/summary.html');
 });
 
 // Run Fat Free
