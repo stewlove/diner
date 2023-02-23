@@ -6,12 +6,14 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-session_start();
-
 // Require autoload file
 require_once('vendor/autoload.php');
 require_once('model/data-layer.php');
 require_once('model/validate.php');
+//require_once('classes/order.php');
+
+// Start the session (AFTER requiring autoload)
+session_start();
 
 // Instantiate F3 Base Class (:: = static method || -> = instance method)
 $f3 = Base::instance();
@@ -43,10 +45,12 @@ $f3->route('GET|POST /order1', function($f3) {
     // If the form has been posted
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
+        $newOrder = new Order();
+
         // Validate the food
         if (validFood(trim($_POST['food']))) {
             // Move data from POST array to SESSION array
-            $_SESSION['food'] = trim($_POST['food']);
+            $newOrder->setFood(trim($_POST['food']));
 
         } else {
             $f3->set('errors["food"]', 'Food must have at least two characters');
@@ -54,13 +58,14 @@ $f3->route('GET|POST /order1', function($f3) {
 
         // Validate the meal
         if (validMeal($_POST['meal'])) {
-            $_SESSION['meal'] = $_POST['meal'];
+            $newOrder->setMeal($_POST['meal']);
         } else {
             $f3->set('errors["meal"]', 'Meal is invalid');
         }
 
         // Check for errors
         if (empty($f3->get('errors'))) {
+            $_SESSION['newOrder'] = $newOrder;
             $f3->reroute('order2');
         }
     }
@@ -76,11 +81,13 @@ $f3->route('GET|POST /order1', function($f3) {
 // Define an order 2 route + page (328/diner/order2)
 $f3->route('GET|POST /order2', function ($f3) {
     // If the form has been posted
-    /*if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Move data from Post to SESSION array
+        $_SESSION['newOrder']->setCondiments(implode(", ", $_POST['conds']));
 
         // Redirect to summary page
-    }*/
+        $f3->reroute('summary');
+    }
 
     // Add condiments to f3 hive
     $f3->set('condiments', getCondiments());
@@ -93,8 +100,14 @@ $f3->route('GET|POST /order2', function ($f3) {
 
 // Define a summary route + page (328/diner/summary)
 $f3->route('GET /summary', function() {
+
+    // Write to the database
+
     $view = new Template();
     echo $view->render('views/summary.html');
+
+    // End the session
+    session_destroy();
 });
 
 // Run Fat Free
