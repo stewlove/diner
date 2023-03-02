@@ -1,114 +1,77 @@
 <?php
 
-// This is my controller
+// order1 route -> views/order-form1.html
+// summary route -> views/order-summary.html
 
-// Turn on error reporting
+//This is my controller
+
+//Turn on error reporting
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Require autoload file
+//Require files
 require_once('vendor/autoload.php');
-require_once('model/data-layer.php');
-require_once('model/validate.php');
-//require_once('classes/order.php');
 
-// Start the session (AFTER requiring autoload)
+//Start a session AFTER requiring autoload.php
 session_start();
+//var_dump($_SESSION);
 
-// Instantiate F3 Base Class (:: = static method || -> = instance method)
+/*
+$myOrder = new Order();
+$myOrder->setFood("tacos");
+echo $myOrder->getFood();
+var_dump($myOrder);
+*/
+
+/*
+$food1 = "tacos";
+$food2 = "        ";
+$food3 = "x";
+echo validFood($food1) ? "valid" : "not valid";
+echo validFood($food2) ? "valid" : "not valid";
+echo validFood($food3) ? "valid" : "not valid";
+*/
+//var_dump(getMeals());
+//var_dump(getCondiments());
+
+//Instantiate F3 Base class
 $f3 = Base::instance();
 
-// Define a default route (328/diner)
+//Instantiate a Controller object
+$con = new Controller($f3);
+
+//Define a default route (328/diner)
 $f3->route('GET /', function() {
-    // Instantiate a view
-    $view = new Template();
-    echo $view->render('views/diner-home.html');
+
+    $GLOBALS['con']->home();
 });
 
-// Define a breakfast route (328/diner/breakfast)
+//Define a breakfast route (328/diner/breakfast)
 $f3->route('GET /breakfast', function() {
-    // Instantiate a view
+
+    //Instantiate a view
     $view = new Template();
-    echo $view->render('views/breakfast.html');
+    echo $view->render("views/breakfast.html");
+
 });
 
-// Define a lunch route + page (328/diner/lunch)
-$f3->route('GET /lunch', function() {
-    // Instantiate a view
-    $view = new Template();
-    echo $view->render('views/lunch.html');
-});
-
-// Define an order 1 route + page (328/diner/order1)
+//Define an order1 route (328/diner/order1)
 $f3->route('GET|POST /order1', function($f3) {
 
-    // If the form has been posted
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
-        $newOrder = new Order();
-
-        // Validate the food
-        if (validFood(trim($_POST['food']))) {
-            // Move data from POST array to SESSION array
-            $newOrder->setFood(trim($_POST['food']));
-
-        } else {
-            $f3->set('errors["food"]', 'Food must have at least two characters');
-        }
-
-        // Validate the meal
-        if (validMeal($_POST['meal'])) {
-            $newOrder->setMeal($_POST['meal']);
-        } else {
-            $f3->set('errors["meal"]', 'Meal is invalid');
-        }
-
-        // Check for errors
-        if (empty($f3->get('errors'))) {
-            $_SESSION['newOrder'] = $newOrder;
-            $f3->reroute('order2');
-        }
-    }
-
-    // Add meals to f3 hive
-    $f3->set('meals', getMeals());
-
-    // Instantiate a view
-    $view = new Template();
-    echo $view->render('views/order1.html');
+    $GLOBALS['con']->order1();
 });
 
-// Define an order 2 route + page (328/diner/order2)
-$f3->route('GET|POST /order2', function ($f3) {
-    // If the form has been posted
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        // Move data from Post to SESSION array
-        $_SESSION['newOrder']->setCondiments(implode(", ", $_POST['conds']));
+//Define an order2 route (328/diner/order2)
+$f3->route('GET|POST /order2', function($f3) {
 
-        // Redirect to summary page
-        $f3->reroute('summary');
-    }
-
-    // Add condiments to f3 hive
-    $f3->set('condiments', getCondiments());
-
-    // Instantiate a view
-    $view = new Template();
-    echo $view->render('views/order2.html');
-
+    $GLOBALS['con']->order2();
 });
 
-// Define a summary route + page (328/diner/summary)
+//Define a summary route (328/diner/summary)
 $f3->route('GET /summary', function() {
 
-    // Write to the database
-
-    $view = new Template();
-    echo $view->render('views/summary.html');
-
-    // End the session
-    session_destroy();
+    $GLOBALS['con']->summary();
 });
 
-// Run Fat Free
+//Run Fat Free
 $f3->run();
